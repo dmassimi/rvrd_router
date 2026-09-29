@@ -134,6 +134,10 @@ Click Add Local Network three times to create the following entries:
 Open a terminal in the directory containing your docker-compose.yml file and run:
 docker-compose up -d --force-recreate
 
+All three containers should start and stay running:
+
+![Docker Desktop - rv-sender, rv-listener and rv-listener-2 running](img/list-containers.png)
+
 
 ## VERIFICATION
 
@@ -155,5 +159,9 @@ Expected Output:
 ```console
 2026-09-28 10:01:11: subject=TEST.SUBJECT, message={DATA="Hello from Subnet A!"}
 ```
+
+In the logs, rv-sender publishes once while both rv-listener and rv-listener-2 receive the same message:
+
+![Docker Desktop logs - rv-sender publishing and rv-listener / rv-listener-2 receiving TEST.SUBJECT](img/logs.png)
 
 The test is successful if a single message published by rv-sender is simultaneously received by both rv-listener and rv-listener-2, despite all three containers existing on completely isolated network subnets.
