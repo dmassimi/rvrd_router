@@ -1,0 +1,66 @@
+services:
+  # 1. Subscriber Container on Subnet B (Service 7502)
+  rv-listener:
+    image: tibco-rv:9.0.0
+    container_name: rv-listener
+    hostname: localhost
+    volumes:
+      - C:\Users\dmassimi\containers\resources\addons\license:/data/license
+    environment:
+      - TIBRV_LICENSE=file:///data/license/dmassimi-vdi_ANY.bin
+    # Listens specifically for TEST.SUBJECT on Service 7502
+    command: >
+      bash -c "tibrvlisten -service 7502 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      subnet_b:
+        ipv4_address: 172.21.0.10
+        
+  rv-listener-2:
+    image: tibco-rv:9.0.0
+    container_name: rv-listener-2
+    hostname: localhost
+    volumes:
+      - C:\Users\dmassimi\containers\resources\addons\license:/data/license
+    environment:
+      - TIBRV_LICENSE=file:///data/license/dmassimi-vdi_ANY.bin
+    command: >
+      bash -c "tibrvlisten -service 7503 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      subnet_c:
+        ipv4_address: 172.22.0.10
+
+  # 2. Publisher Container on Subnet A (Service 7501)
+  rv-sender:
+    image: tibco-rv:9.0.0
+    container_name: rv-sender
+    hostname: localhost
+    volumes:
+      - C:\Users\dmassimi\containers\resources\addons\license:/data/license
+    environment:
+      - TIBRV_LICENSE=file:///data/license/dmassimi-vdi_ANY.bin
+    # Keeps background listen transport open on 7501 to maintain client session in rvrd
+    command: >
+      bash -c "tibrvlisten -service 7501 -daemon tcp:host.docker.internal:7500 TEST.ACK & sleep 2; while true; do echo 'Publishing to NET-A...'; tibrvsend -service 7501 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT 'Hello from Subnet A!'; sleep 5; done"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      subnet_a:
+        ipv4_address: 172.20.0.10
+
+networks:
+  subnet_a:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  subnet_b:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  subnet_c:      
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
