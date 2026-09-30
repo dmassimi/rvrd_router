@@ -8,6 +8,8 @@ Since standard TIBCO RV relies on UDP multicast/broadcast, it cannot natively cr
 ## ARCHITECTURE DIAGRAM
 ![Architecture](img/architecture.png)
 
+The topology runs four containers: one publisher on Subnet A (`rv-sender`, service 7501), two replicas of the Subnet B subscriber (`rv-listener-a-1` and `rv-listener-a-2`, service 7502) and one Subnet C subscriber (`rv-listener-b`, service 7503).
+
 
 ## PREREQUISITES
 
@@ -38,27 +40,30 @@ services:
       subnet_a:
         ipv4_address: 172.20.0.10
 
-  # 2. First Subscriber Container on Subnet B (Service 7502)
-  rv-listener:
+  # 2. Subscriber Containers on Subnet B (Service 7502)
+  rv-listener-a:
     image: tibco-rv:9.0.0
-    container_name: rv-listener
+    #container_name: rv-listener
     hostname: localhost
     volumes:
       - C:\Users\dmassimi\containers\resources\addons\license:/data/license
     environment:
       - TIBRV_LICENSE=file:///data/license/dmassimi-vdi_ANY.bin
+    # Listens specifically for TEST.SUBJECT on Service 7502
     command: >
       bash -c "tibrvlisten -service 7502 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # Two replicas: Docker creates rv-listener-a-1 and rv-listener-a-2
+    deploy:
+      replicas: 2
     networks:
-      subnet_b:
-        ipv4_address: 172.21.0.10
+      - subnet_b
 
   # 3. Second Subscriber Container on Subnet C (Service 7503)
-  rv-listener-2:
+  rv-listener-b:
     image: tibco-rv:9.0.0
-    container_name: rv-listener-2
+    container_name: rv-listener-b
     hostname: localhost
     volumes:
       - C:\Users\dmassimi\containers\resources\addons\license:/data/license
@@ -132,36 +137,40 @@ Click Add Local Network three times to create the following entries:
 **Step 4: Start Containers**
 
 Open a terminal in the directory containing your docker-compose.yml file and run:
-docker-compose up -d --force-recreate
+```bash
+docker compose up -d --force-recreate
+```
 
-All three containers should start and stay running:
+Note: `deploy.replicas` is only honored by the Compose V2 CLI (`docker compose`). The legacy `docker-compose` (V1) binary ignores it unless you add `--compatibility`.
 
-![Docker Desktop - rv-sender, rv-listener and rv-listener-2 running](img/list-containers.png)
+All four containers should start and stay running (rv-sender, rv-listener-a-1, rv-listener-a-2 and rv-listener-b):
+
+![Docker Desktop - rv-sender, rv-listener-a-1, rv-listener-a-2 and rv-listener-b running](img/list-containers.png)
 
 
 ## VERIFICATION
 
 To verify that routing is working, observe the logs of the subscriber containers.
 
-Terminal 1 (rv-listener on Subnet B):
-`docker logs -f rv-listener`
+Terminal 1 (rv-listener-b on Subnet C):
+`docker logs -f rv-listener-b`
 
-Expected Output: 
-```console
-2026-09-28 10:01:11: subject=TEST.SUBJECT, message={DATA="Hello from Subnet A!"}
-```
-Terminal 2 (rv-listener-2 on Subnet C):
-`docker logs -f rv-listener-2`
+Terminal 2 (first rv-listener-a replica on Subnet B):
+`docker logs -f rvrd_docker_project-rv-listener-a-1`
 
+Terminal 3 (second rv-listener-a replica on Subnet B):
+`docker logs -f rvrd_docker_project-rv-listener-a-2`
 
-Expected Output: 
+Expected Output (identical in all three terminals):
 
 ```console
-2026-09-28 10:01:11: subject=TEST.SUBJECT, message={DATA="Hello from Subnet A!"}
+2026-09-30 07:29:53: subject=TEST.SUBJECT, message={DATA="Hello from Subnet A!"}
 ```
 
-In the logs, rv-sender publishes once while both rv-listener and rv-listener-2 receive the same message:
+Since rv-listener-a has no `container_name`, Docker prefixes each replica with the Compose project name (rvrd_docker_project here - it defaults to the folder name). List the exact names with `docker ps --format "{{.Names}}"`.
 
-![Docker Desktop logs - rv-sender publishing and rv-listener / rv-listener-2 receiving TEST.SUBJECT](img/logs.png)
+In the logs, rv-sender publishes once while all three subscribers receive the same message:
 
-The test is successful if a single message published by rv-sender is simultaneously received by both rv-listener and rv-listener-2, despite all three containers existing on completely isolated network subnets.
+![Docker Desktop logs - rv-sender publishing and the rv-listener-a replicas / rv-listener-b receiving TEST.SUBJECT](img/logs.png)
+
+The test is successful if a single message published by rv-sender is simultaneously received by both rv-listener-a replicas (Subnet B) and by rv-listener-b (Subnet C), despite the containers running on completely isolated network subnets.

@@ -1,8 +1,8 @@
 services:
   # 1. Subscriber Container on Subnet B (Service 7502)
-  rv-listener:
+  rv-listener-a:
     image: tibco-rv:9.0.0
-    container_name: rv-listener
+    #container_name: rv-listener
     hostname: localhost
     volumes:
       - C:\Users\dmassimi\containers\resources\addons\license:/data/license
@@ -13,13 +13,14 @@ services:
       bash -c "tibrvlisten -service 7502 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      replicas: 2
     networks:
-      subnet_b:
-        ipv4_address: 172.21.0.10
+      - subnet_b
         
-  rv-listener-2:
+  rv-listener-b:
     image: tibco-rv:9.0.0
-    container_name: rv-listener-2
+    container_name: rv-listener-b
     hostname: localhost
     volumes:
       - C:\Users\dmassimi\containers\resources\addons\license:/data/license
