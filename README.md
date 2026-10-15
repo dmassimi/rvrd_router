@@ -174,3 +174,33 @@ In the logs, rv-sender publishes once while all three subscribers receive the sa
 ![Docker Desktop logs - rv-sender publishing and the rv-listener-a replicas / rv-listener-b receiving TEST.SUBJECT](img/logs.png)
 
 The test is successful if a single message published by rv-sender is simultaneously received by both rv-listener-a replicas (Subnet B) and by rv-listener-b (Subnet C), despite the containers running on completely isolated network subnets.
+
+## BACKUP & RESTORE CONFIGURATION (XML)
+
+You can back up your router's configuration to a human-readable XML file and import it into a fresh `rvrd` instance using TIBCO's `tibrvcfg` utility. The internal `.store` file should not be manually edited.
+
+**1. Export the XML**
+Navigate to the RVRD Web UI (`http://localhost:7580`) and copy the XML representation of your configuration, saving it to a local file (e.g., `C:\Users\dmassimi\git\rvrd_router\conf-rvrd.xml`).
+
+**2. Clean the XML for Import**
+Exported XML often masks encrypted private key passwords (e.g., `private-key-password=""`), which will cause a decryption failure during import. Additionally, TIBCO's strict DTD schema requires the `<security-parameters>` block to exist. 
+
+If you do not require HTTPS/SSL certificates, modify the end of your XML file to include an empty security block:
+```xml
+    </rvrd-parameters>
+    <security-parameters></security-parameters>
+  </configuration>
+</rendezvous>
+```
+
+**3. Import to a New Instance**
+Start a new `rvrd` instance with a fresh `.store` file:
+```bash
+rvrd -listen tcp:7510 -http 7581 -store C:\Users\dmassimi\containers\new_rvrd.store
+```
+
+Open a command prompt in your TIBCO `bin` folder (e.g., `C:\apps\tibco\home_bw515\tibrv\8.7\bin`). Ensure Java is in your system's PATH, then run the `matchXML` command against your file:
+```powershell
+.\tibrvcfg.bat -url http://localhost:7581 matchXML C:\Users\dmassimi\git\rvrd_router\conf-rvrd.xml
+```
+Refresh the Web UI for the new instance to verify the local networks and routing rules have populated correctly.

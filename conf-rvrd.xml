@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE rendezvous SYSTEM "http://www.tibco.com/dtd/rv">
+<rendezvous url="http://host.docker.internal:7580/">
+  <configuration>
+    <rvrd-parameters>
+      <router name="CENTRAL-ROUTER" maximum-backlog="0">
+        <local-network name="NET-A" network="" service="7501" cost="1">
+          <export subject="TEST.SUBJECT"/>
+        </local-network>
+        <local-network name="NET-B" network="" service="7502" cost="1">
+          <import subject="TEST.SUBJECT" weight="10"/>
+        </local-network>
+        <local-network name="NET-C" network="" service="7503" cost="1">
+          <import subject="TEST.SUBJECT" weight="10"/>
+        </local-network>
+      </router>
+    </rvrd-parameters>
+    <security-parameters></security-parameters>
+  </configuration>
+</rendezvous>
