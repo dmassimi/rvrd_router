@@ -101,7 +101,7 @@ networks:
 1. Open a command prompt on your Windows host.
 2. Start the Routing Daemon listening on port 7500 with the HTTP interface enabled on 7580:
 ```bash
-   rvrd -listen tcp:7500 -http 7580
+   rvrd -listen tcp:7500 -http 7580 -store C:\Users\dmassimi\containers\rvrd.store
 ```
 
 **Step 2: Configure the rvrd Router & Local Networks**
