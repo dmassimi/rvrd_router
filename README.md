@@ -199,7 +199,7 @@ Start a new `rvrd` instance with a fresh `.store` file:
 rvrd -listen tcp:7510 -http 7581 -store C:\Users\dmassimi\containers\new_rvrd.store
 ```
 
-Open a command prompt in your TIBCO `bin` folder (e.g., `C:\apps\tibco\home_bw515\tibrv\8.7\bin`). Ensure Java is in your system's PATH, then run the `matchXML` command against your file:
+Open a command prompt in your TIBCO `bin` folder (e.g., `C:\apps\tibco\home_bw515\tibrv\8.7\bin`). Ensure Java is in your system's PATH (or add it, e.g. `$env:PATH += ";C:\apps\tibco\home_bw515\tibcojre64\11\bin"`), then run the `matchXML` command against your file:
 ```powershell
 .\tibrvcfg.bat -url http://localhost:7581 matchXML C:\Users\dmassimi\git\rvrd_router\conf-rvrd.xml
 ```
