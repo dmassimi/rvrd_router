@@ -8,7 +8,7 @@ Since standard TIBCO RV relies on UDP multicast/broadcast, it cannot natively cr
 ## ARCHITECTURE DIAGRAM
 ![Architecture](img/architecture.png)
 
-The topology runs four containers: one publisher on Subnet A (`rv-sender`, service 7501), two replicas of the Subnet B subscriber (`rv-listener-a-1` and `rv-listener-a-2`, service 7502) and one Subnet C subscriber (`rv-listener-b`, service 7503).
+The topology runs four containers: one publisher on Subnet A (`rv-sender`, service 7501), two replicas of the Subnet B subscriber (`rv-listener-a-1` and `rv-listener-a-2`, service 7502) and one Subnet C subscriber (`rv-listener-b`, service 7503). A `portainer` container is also started for visual management of the Docker networks and containers.
 
 
 ## PREREQUISITES
@@ -77,6 +77,17 @@ services:
       subnet_c:
         ipv4_address: 172.22.0.10
 
+  # Portainer for Visual Network & Container Management
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
 networks:
   subnet_a:
     ipam:
@@ -90,7 +101,12 @@ networks:
     ipam:
       config:
         - subnet: 172.22.0.0/16
-
+  # subnet_d:
+  #   ipam:
+  #     config:
+  #       - subnet: 172.23.0.0/16
+volumes:
+  portainer_data:
 ```
 
 ## CONFIGURATION & EXECUTION STEPS
@@ -143,7 +159,14 @@ docker compose up -d --force-recreate
 
 Note: `deploy.replicas` is only honored by the Compose V2 CLI (`docker compose`). The legacy `docker-compose` (V1) binary ignores it unless you add `--compatibility`.
 
-All four containers should start and stay running (rv-sender, rv-listener-a-1, rv-listener-a-2 and rv-listener-b):
+All four containers should start and stay running (rv-sender, rv-listener-a-1, rv-listener-a-2 and rv-listener-b). A `portainer` container is also started for visual management:
+
+```bash
+# Portainer UI
+http://localhost:9000
+```
+
+If anything looks off, use Portainer to inspect the containers and their attached networks (subnet_a, subnet_b, subnet_c) before troubleshooting further.
 
 ![Docker Desktop - rv-sender, rv-listener-a-1, rv-listener-a-2 and rv-listener-b running](img/list-containers.png)
 
