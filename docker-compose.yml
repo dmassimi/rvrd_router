@@ -33,6 +33,22 @@ services:
     networks:
       subnet_c:
         ipv4_address: 172.22.0.10
+  
+  # rv-listener-c:
+  #   image: tibco-rv:9.0.0
+  #   container_name: rv-listener-c
+  #   hostname: localhost
+  #   volumes:
+  #     - C:\Users\dmassimi\containers\resources\addons\license:/data/license:ro
+  #   environment:
+  #     - TIBRV_LICENSE=file:///data/license/dmassimi-vdi_ANY.bin
+  #   command: >
+  #     bash -c "tibrvlisten -service 7502 -daemon tcp:host.docker.internal:7500 TEST.SUBJECT"
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   networks:
+  #     subnet_d:
+  #       ipv4_address: 172.23.0.10
 
   # 2. Publisher Container on Subnet A (Service 7501)
   rv-sender:
@@ -51,6 +67,16 @@ services:
     networks:
       subnet_a:
         ipv4_address: 172.20.0.10
+  # Portainer for Visual Network & Container Management
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
 
 networks:
   subnet_a:
@@ -65,3 +91,9 @@ networks:
     ipam:
       config:
         - subnet: 172.22.0.0/16
+  # subnet_d:
+  #   ipam:
+  #     config:
+  #       - subnet: 172.23.0.0/16
+volumes:
+  portainer_data:
